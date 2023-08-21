@@ -1,17 +1,9 @@
 import graphviz
 
 terminal = set()
-terminal.add('n')
-terminal.add('+')
-terminal.add('*')
-terminal.add('$')
-
 prod = []
-# curNode = 1;
 
 def parse(tokens,grammar,nonTerminal,nodeN = 0,inp = 0):
-    # global curNode
-    # print("p : ",nonTerminal,tokens)
 
     if nonTerminal not in grammar:
         raise ValueError(f"Nonterminal '{nonTerminal}' not found in grammar.")
@@ -19,13 +11,11 @@ def parse(tokens,grammar,nonTerminal,nodeN = 0,inp = 0):
     for production in grammar[nonTerminal]:
         current_tokens = tokens.copy()
         flag = True
-        # print("prod : ",production)
         if(production[0]=='$'):
             prod.append([nonTerminal,production,nodeN,inp])
             return current_tokens
         prod.append([nonTerminal,production,nodeN,inp])
         k = len(prod)
-        # curNode = curNode+1
         for index,symbol in enumerate(production):
             try:
                 if symbol not in terminal:
@@ -41,10 +31,8 @@ def parse(tokens,grammar,nonTerminal,nodeN = 0,inp = 0):
             except ValueError:
                 flag = False
                 break
-        # print("flag : ",nonTerminal,flag)
         if flag:
             token = current_tokens
-            # print("return : ",token)
             return token
         else :
             prod.pop();
@@ -81,28 +69,47 @@ def drawGraph(data):
     dot.render('parse_tree_graph', view=True)
 
 
-def main():
-    # Define your context-free grammar as a dictionary of production rules
-    grammar = {
-        'S': [['n', 'B']],
-        'B': [['n','B','A','B'], ['$']],
-        'A': [['+'],['*']]
-    }
+def get_terminal_symbols():
+    
+    terminal_input = input("Enter terminal symbols separated by space: ")
+    return set(terminal_input.split())
 
-    input_str = input("Enter a string of tokens (e.g., 'aabb'): ")
-    tokens = list(input_str)
-    tokens.append("$")
-    # print("Tokens :",tokens)
-    try:
-        tokens = parse(tokens, grammar, 'S')
-        if len(tokens)==1 and tokens[0]=='$':
-            # print(prod)
-            drawGraph(prod)
-            print("Parsing successful.")
-        else:
-            print("Parsing failed. Unexpected tokens remaining:", tokens)
-    except ValueError as e:
-        print("Parsing failed. Error:", e)
+def get_non_terminal_symbols():
+    non_terminal_input = input("Enter non-terminal symbols separated by space: ")
+    return set(non_terminal_input.split())
+
+def get_production_rules(non_terminals):
+    grammar = {}
+    for non_terminal in non_terminals:
+        productions_input = input(f"Enter production rules for {non_terminal} (separated by '|'): ")
+        productions = [production.split() for production in productions_input.split('|')]
+        grammar[non_terminal] = productions
+    return grammar
+
+
+def main():
+    global terminal
+    # Define your context-free grammar as a dictionary of production rules
+    terminal = get_terminal_symbols()
+    non_terminal_symbols = get_non_terminal_symbols()
+    grammar = get_production_rules(non_terminal_symbols)
+
+
+    while(int(input("Enter the string to Check (1/0)"))):
+        global prod
+        prod = []
+        input_str = input("Enter a string of tokens (e.g., 'aabb'): ")
+        tokens = list(input_str)
+        tokens.append("$")
+        try:
+            tokens = parse(tokens, grammar, 'S')
+            if len(tokens)==1 and tokens[0]=='$':
+                drawGraph(prod)
+                print("Parsing successful.")
+            else:
+                print("Parsing failed. Unexpected tokens remaining:", tokens)
+        except ValueError as e:
+            print("Parsing failed. Error:", e)
 
 if __name__ == "__main__":
     main()
