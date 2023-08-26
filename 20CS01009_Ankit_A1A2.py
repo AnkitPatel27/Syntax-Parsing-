@@ -19,18 +19,17 @@ class Grammar:
         self.productions[non_terminal].extend(production)
 
     def display_grammar(self):
-        # print("Terminals:", self.terminals)
-        # print("Non-Terminals:", self.non_terminals)
-        # print("Productions:")
-        for nt, prods in self.productions.items():  
+        for nt, prods in self.productions.items():
             print(nt, "->", end=" ")
             productions_str = []
             for prod in prods:
-                if len(prod[0]) == 0:
-                    productions_str.append("∈")
+                if prod == ['']:
+                    productions_str.append('ε')
                 else:
-                    productions_str.append("".join(prod))
-            print("|".join(productions_str))
+                    productions_str.append(' '.join(str(item) for item in prod))
+            print(' | '.join(productions_str))
+
+
  
 
     def find_index(self, target):
@@ -46,10 +45,11 @@ class Grammar:
         generated_strings = []
         
         for rule in replacement_rules:
-            # print(rule)
+            # print("Rule : ",rule)
             if(rule[0]==non_terminal):
                 for prod in production_rules:
-                    newString = prod[0]+rule[1:]
+                    print(prod,rule)
+                    newString = prod+rule[1:]   
                     generated_strings.append(newString)
             else:
                 generated_strings.append(rule)
@@ -63,12 +63,13 @@ class Grammar:
         vis[node] = 1
         # nter = list(OrderedDict.fromkeys(self.non_terminals))
         # print("DFS : ",node,parent,nter[node],self.productions[nter[node]])
-
+        print(nter[node])
         for index, nxt in enumerate(self.productions[nter[node]]):
+            # print("nxr",nxt)
             indArray[node] = index
             if len(nxt[0]):
-                ind = self.find_index(nxt[0][0])
-                # print("Char :",nxt[0][0],ind)
+                ind = self.find_index(nxt[0])
+                print("Char :" ,nxt[0],ind)
                 if ind!=node and ind!=-1 and par[ind]==-1:
                     ans = self.dfs(ind,node,vis,par,indArray,lastNode,nter)
                     if ans!=-1:
@@ -101,7 +102,8 @@ class Grammar:
             return False
 
         node = lastNode[0]
-        replacement_rule = [self.productions[nter[node]][indArray[node]][0]]
+        replacement_rule = [self.productions[nter[node]][indArray[node]].copy()]
+        print("Rule ; ",replacement_rule)
         self.productions[nter[node]].pop(indArray[node])
         travel = []
         while(node!=ans):
@@ -117,20 +119,24 @@ class Grammar:
 
         temp = self.generate_strings(nter[node],self.productions[nter[node]],replacement_rule)
         replacement_rule = temp
-        
+        print("replace rule",replacement_rule)
         node = lastNode[0]
         # print(self.productions[nter[node]])  
         temp = set()
         
-        for val in list(set(replacement_rule)):
-            temp.add(val)
+        # replacement_rule = list(set(replacement_rule))
+        replacement_rule = [l for i,l in enumerate(replacement_rule ) if l not in replacement_rule [i+1:]]
 
-        for val in self.productions[nter[node]]:
-            temp.add(val[0])
+        # for val in list(set(replacement_rule)):
+        #     temp.add(val)
+
+        # for val in self.productions[nter[node]]:
+        #     temp.add(val[0])
 
         self.productions[nter[node]] = []
-        for val in list(temp):
-            self.productions[nter[node]].append([val])
+        self.productions[nter[node]] = replacement_rule
+
+        
 
         return True
         
@@ -150,36 +156,39 @@ class Grammar:
 
     def remove_left_recursion(self):
         new_production = dict();
+        ret = False
         for node,prods in self.productions.items():
             flag = False
             for val in prods:
-                if len(val[0])>0 and val[0][0]==node:
+                # print(val[0])
+                if len(val[0])>0 and val[0]==node:
                     flag = True
                     break
             
             if flag:
+                ret = True
                 beta = []
                 alpha = []
                 for val in prods:
-                    if len(val[0])>0 and val[0][0]!=node:
+                    if len(val[0])>0 and val[0]!=node:
                         beta.append(val)
-                    elif len(val[0])>0 and len(val[0][1:]):
-                        alpha.append([val[0][1:]])
-                print(beta)
-                print(alpha)
+                    elif len(val[0])>0 :
+                        alpha.append(val[1:])
                 tempNodeProd = []
 
+                # print("beta : ",beta)
+                # print("alpha : ",alpha)
                 newNode = self.find_unique_character(list(self.non_terminals),list(self.terminals))
                 self.add_non_terminal(newNode)
                 if len(beta)==0:
                     tempNodeProd = [[newNode]]
                 else:
                     for val in beta:
-                        tempNodeProd.append([val[0]+newNode])
+                        tempNodeProd.append(val+[newNode])
                 
                 nodePrimeProd = [[""]]
                 for val in alpha:
-                    nodePrimeProd.append(val[0]+newNode)
+                    nodePrimeProd.append(val+[newNode])
                 
                 # print(tempNodeProd,nodePrimeProd)
                 new_production[node] = tempNodeProd
@@ -190,18 +199,19 @@ class Grammar:
         
         # print(new_production)
         self.productions = new_production
+        return ret
 
-    def longest_common_prefix(self,str1, str2):
+    def longest_common_prefix(self,str1,str2):
+        # print("string : ",str1,str2)
         common_prefix = []
         min_length = min(len(str1), len(str2))
-        
         for i in range(min_length):
             if str1[i] == str2[i]:
                 common_prefix.append(str1[i])
             else:
                 break
         
-        return ''.join(common_prefix)
+        return common_prefix
     
     def count_frequency(self,numbers, target):
         count = 0
@@ -221,11 +231,11 @@ class Grammar:
             for ik,prod in enumerate(prods):
                 if index[ik] == 0:
                     index[ik] = ik+1
-                    # print("print :",prod[0])
-                    comStr = prod[0]
+                    # print("prod :",prod)
+                    comStr = prod
                     for i,p in enumerate(prods):
                         if index[i]==0:
-                            str = self.longest_common_prefix(comStr,p[0])
+                            str = self.longest_common_prefix(comStr,p)
                             if len(str):
                                 index[i] = ik+1;
                                 comStr = str
@@ -256,19 +266,22 @@ class Grammar:
                             newProd = []
                             done.add(val)
                             comStr = prefixDict[val]
-                            # print("Comstr : ",comStr)
+                            # print("Comstr false : ",comStr)
                             # newProd.append([comStr])
                             
                             for i,v in enumerate(index):
                                 if v==val:
-                                    # done.add(v)
-                                    newProd.append([prods[i][0][len(comStr):]]) 
+                                    done.add(v)
+                                    if len(prods[i][len(comStr):]):
+                                        newProd.append(prods[i][len(comStr):]) 
+                                    else:
+                                        newProd.append([''])
                                     # print("NewProd : ",newProd)
                             
                             newNode = self.find_unique_character(list(self.terminals),list(self.non_terminals))
                             self.non_terminals.add(newNode)
                             newProduction[newNode] = newProd;
-                            oldProd.append([comStr+newNode])
+                            oldProd.append([comStr+[newNode]])
                             # print("oldProd: ",oldProd)
                         elif val not in done:
                             oldProd.append([prods[val-1][0]])
@@ -282,9 +295,13 @@ class Grammar:
 
 def main():
     grammar = Grammar()
-    terminals_input = input("Enter terminal symbols separated by spaces: ")
+    with open("terminals.txt",'r') as file:
+        terminals_input = file.readlines()[0]
+    # terminals_input = input("Enter terminal symbols separated by spaces: ")
 
-    non_terminals_input = input("Enter non-terminal symbols separated by spaces: ")
+    with open("non_terminals.txt",'r') as file:
+        non_terminals_input = file.readlines()[0]
+    # non_terminals_input = input("Enter non-terminal symbols separated by spaces: ")
     # non_terminals_input = 'S'
     
     terminals = terminals_input.split()
@@ -297,30 +314,50 @@ def main():
         grammar.add_non_terminal(non_terminal)
 
     # Take input for number of production rules
-    num_productions = int(input("Enter the number of production rules: "))
-    # num_productions = 3
+    # num_productions = int(input("Enter the number of production rules: "))
+    # num_productions = 19
 
     # Take input for each production rule
-    for _ in range(num_productions):
-        production_input = input("Enter production rule in the format 'non_terminal -> symbols': ")
+    with open("pro_rule.txt",'r') as file:
+        production_rules = file.readlines();
+
+    num_productions = len(production_rules)
+    
+
+
+
+    for rule in production_rules:
+        production_input = rule
         non_terminal, productions = production_input.split("->")
         non_terminal = non_terminal.strip()
-        production_list = [prod.strip().split() for prod in productions.split('|')]
+        # production_list = [prod.strip().split() for prod in productions.split('|')]
+        production_list = [production.split() for production in productions.split('|')]
         try:
-            index = production_list.index(["∈"])
-            if index>=0:
-                production_list.pop(index)
-                production_list.append([""])
+            for i in range(len(production_list)):
+                if production_list[i] == ['ε']:
+                    production_list[i] = ['']
+
         except:
             None
         # print(production_list)
         grammar.add_production(non_terminal, production_list)
 
     # print("\nGrammar:")
+    print(grammar.non_terminals)
+    print(grammar.terminals)
+    print(grammar.productions)
+    # grammar.display_grammar();
+    while(1):
+        flag = True
+        while(grammar.find_indirect_left_recursion()):
+            flag = False
+        
+        while(grammar.remove_left_recursion()):
+            flag = False
+        
+        if(flag):
+            break
 
-    while(grammar.find_indirect_left_recursion()):
-        None
-    grammar.remove_left_recursion()
 
     print("\n\n ********* Left Recursion *********")
     grammar.display_grammar()
@@ -337,3 +374,5 @@ if __name__ == "__main__":
     main()
 
 # write a regex for accepting numbers
+# + − ∗ / = < > ( ) { } := ;  and else end ic id if int do fc float not or print prog scan str then while
+# AE BE D DL E F ES IOS IS NE P PE RE S SL T TY VL WS

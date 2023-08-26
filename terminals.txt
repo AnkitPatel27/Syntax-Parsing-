@@ -1,0 +1,1 @@
++ − ∗ / = < > ( ) { } := ;  and else end ic id if int do fc float not or print prog scan str then while 

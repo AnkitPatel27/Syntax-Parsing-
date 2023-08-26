@@ -104,6 +104,7 @@ def main():
         try:
             tokens = parse(tokens, grammar, 'S')
             if len(tokens)==1 and tokens[0]=='$':
+                print(prod)
                 drawGraph(prod)
                 print("Parsing successful.")
             else:
