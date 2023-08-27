@@ -19,15 +19,26 @@ class Grammar:
         self.productions[non_terminal].extend(production)
 
     def display_grammar(self):
+        file = open("GrammarLL.txt","w")
+        lines = []
         for nt, prods in self.productions.items():
+            s = f"{nt} -> "
             print(nt, "->", end=" ")
             productions_str = []
             for prod in prods:
+                while(type(prod[0])==list):
+                    prod = prod[0]
                 if prod == ['']:
                     productions_str.append('ε')
                 else:
                     productions_str.append(' '.join(str(item) for item in prod))
             print(' | '.join(productions_str))
+            s += ' | '.join(productions_str)
+            s += '\n'
+            lines.append(s)
+        file.writelines(lines)
+        file.close()
+            
 
 
  
@@ -48,7 +59,7 @@ class Grammar:
             # print("Rule : ",rule)
             if(rule[0]==non_terminal):
                 for prod in production_rules:
-                    print(prod,rule)
+                    # print(prod,rule)
                     newString = prod+rule[1:]   
                     generated_strings.append(newString)
             else:
@@ -63,13 +74,13 @@ class Grammar:
         vis[node] = 1
         # nter = list(OrderedDict.fromkeys(self.non_terminals))
         # print("DFS : ",node,parent,nter[node],self.productions[nter[node]])
-        print(nter[node])
+        # print(nter[node])
         for index, nxt in enumerate(self.productions[nter[node]]):
             # print("nxr",nxt)
             indArray[node] = index
             if len(nxt[0]):
                 ind = self.find_index(nxt[0])
-                print("Char :" ,nxt[0],ind)
+                # print("Char :" ,nxt[0],ind)
                 if ind!=node and ind!=-1 and par[ind]==-1:
                     ans = self.dfs(ind,node,vis,par,indArray,lastNode,nter)
                     if ans!=-1:
@@ -103,7 +114,7 @@ class Grammar:
 
         node = lastNode[0]
         replacement_rule = [self.productions[nter[node]][indArray[node]].copy()]
-        print("Rule ; ",replacement_rule)
+        # print("Rule ; ",replacement_rule)
         self.productions[nter[node]].pop(indArray[node])
         travel = []
         while(node!=ans):
@@ -119,7 +130,7 @@ class Grammar:
 
         temp = self.generate_strings(nter[node],self.productions[nter[node]],replacement_rule)
         replacement_rule = temp
-        print("replace rule",replacement_rule)
+        # print("replace rule",replacement_rule)
         node = lastNode[0]
         # print(self.productions[nter[node]])  
         temp = set()
@@ -140,19 +151,8 @@ class Grammar:
 
         return True
         
-    def find_unique_character(self,list1, list2):
-    # Flatten the lists
-        characters = [char for sublist in list1 + list2 for char in sublist]
-
-        # Create a set of characters
-        combined_set = set(characters)
-
-        # Iterate through the alphabet to find a character not in the set
-        for char in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz":
-            if char not in combined_set:
-                return char
-        
-        return None 
+    def find_unique_character(self,list1, list2,k):
+        return k+"'"
 
     def remove_left_recursion(self):
         new_production = dict();
@@ -178,7 +178,7 @@ class Grammar:
 
                 # print("beta : ",beta)
                 # print("alpha : ",alpha)
-                newNode = self.find_unique_character(list(self.non_terminals),list(self.terminals))
+                newNode = self.find_unique_character(list(self.non_terminals),list(self.terminals),node)
                 self.add_non_terminal(newNode)
                 if len(beta)==0:
                     tempNodeProd = [[newNode]]
@@ -278,7 +278,7 @@ class Grammar:
                                         newProd.append([''])
                                     # print("NewProd : ",newProd)
                             
-                            newNode = self.find_unique_character(list(self.terminals),list(self.non_terminals))
+                            newNode = self.find_unique_character(list(self.terminals),list(self.non_terminals),node)
                             self.non_terminals.add(newNode)
                             newProduction[newNode] = newProd;
                             oldProd.append([comStr+[newNode]])
@@ -295,12 +295,12 @@ class Grammar:
 
 def main():
     grammar = Grammar()
-    with open("terminals.txt",'r') as file:
-        terminals_input = file.readlines()[0]
+    with open("input.txt",'r') as file:
+        inputs = file.readlines()
+        terminals_input = inputs[1]
+        non_terminals_input = inputs[0]
+        production_rules = inputs[2:]
     # terminals_input = input("Enter terminal symbols separated by spaces: ")
-
-    with open("non_terminals.txt",'r') as file:
-        non_terminals_input = file.readlines()[0]
     # non_terminals_input = input("Enter non-terminal symbols separated by spaces: ")
     # non_terminals_input = 'S'
     
@@ -318,8 +318,8 @@ def main():
     # num_productions = 19
 
     # Take input for each production rule
-    with open("pro_rule.txt",'r') as file:
-        production_rules = file.readlines();
+    # with open("pro_rule.txt",'r') as file:
+    #     production_rules = file.readlines();
 
     num_productions = len(production_rules)
     
@@ -360,14 +360,18 @@ def main():
 
 
     print("\n\n ********* Left Recursion *********")
-    grammar.display_grammar()
+    # grammar.display_grammar()
     
     print("\n\n ********* Left Factored *********")
 
     while(grammar.remove_Left_factoring()):
         None
     
+    # print(grammar.non_terminals)
+    with open("new_non_terminals.txt",'w') as file:
+        file.write(' '.join(grammar.non_terminals))
     grammar.display_grammar()
+    exit()
 
 
 if __name__ == "__main__":
